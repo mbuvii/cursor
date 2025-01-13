@@ -10,7 +10,7 @@
   "dependencies": {
     "whatsapp-web.js": "latest",
     "ytdl-core": "latest",
-    "@google/generative-ai": "latest",
+    "node-fetch": "^2.6.9",
     "express": "^4.17.1",
     "puppeteer": "latest"
   },

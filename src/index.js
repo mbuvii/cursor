@@ -22,14 +22,15 @@ app.get('/', (req, res) => {
 });
 
 // Start Express server
-app.listen(port, () => {
+const server = app.listen(port, () => {
     console.log(`Server is running on port ${port}`);
 });
 
-// Initialize WhatsApp client
+// Initialize WhatsApp client with optimized Puppeteer config
 const client = new Client({
     authStrategy: new NoAuth(),
     puppeteer: {
+        headless: true,
         args: [
             '--no-sandbox',
             '--disable-setuid-sandbox',
@@ -37,9 +38,13 @@ const client = new Client({
             '--disable-accelerated-2d-canvas',
             '--no-first-run',
             '--no-zygote',
-            '--disable-gpu'
-        ],
-        headless: true
+            '--single-process',
+            '--disable-gpu',
+            '--disable-extensions',
+            '--disable-software-rasterizer',
+            '--disable-features=site-per-process',
+            '--disable-web-security'
+        ]
     }
 });
 
@@ -117,28 +122,24 @@ client.on('message', async msg => {
     }
 });
 
-// Status monitor
-client.on('status.update', async status => {
-    console.log('Status update:', status);
-});
-
-// Error handler
-process.on('uncaughtException', (err) => {
-    console.error('Uncaught Exception:', err);
-});
-
-process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', reason);
+// Graceful shutdown
+process.on('SIGTERM', async () => {
+    console.log('SIGTERM received. Closing server...');
+    try {
+        await client.destroy();
+        server.close(() => {
+            console.log('Server closed');
+            process.exit(0);
+        });
+    } catch (error) {
+        console.error('Error during shutdown:', error);
+        process.exit(1);
+    }
 });
 
 // Initialize client
 client.initialize().catch(err => {
     console.error('Client initialization failed:', err);
-});
-
-// Keep the process alive
-process.on('SIGTERM', () => {
-    console.log('SIGTERM received. Keeping process alive.');
 });
 
 // Export for potential external use

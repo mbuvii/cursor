@@ -1,11 +1,9 @@
 const { Client, NoAuth } = require('whatsapp-web.js');
 const ytdl = require('ytdl-core');
-const { GoogleGenerativeAI } = require('@google/generative-ai');
+const fetch = require('node-fetch');
 const config = require('./config/config');
 const { formatDuration } = require('./utils/helpers');
-
-// Initialize AI
-const genAI = new GoogleGenerativeAI(config.GEMINI_API_KEY);
+const { downloadYouTube } = require('./utils/youtube');
 
 // Initialize WhatsApp client
 const client = new Client({
@@ -32,9 +30,11 @@ client.on('ready', () => {
 
 // Handle pairing code
 async function handlePairing(number) {
+    // Remove any + if present and ensure number starts with country code
+    const cleanNumber = number.replace('+', '').trim();
     try {
-        const code = await client.requestPairingCode(number);
-        console.log(`Pairing code for ${number}: ${code}`);
+        const code = await client.requestPairingCode(cleanNumber);
+        console.log(`Pairing code for ${cleanNumber}: ${code}`);
         return code;
     } catch (error) {
         console.error('Error generating pairing code:', error);
@@ -63,6 +63,12 @@ client.on('message', async msg => {
             await handler(msg, args);
         }
     }
+});
+
+// Status monitor
+client.on('status.update', async status => {
+    console.log('Status update:', status);
+    // You can add specific status handling logic here
 });
 
 // Initialize client

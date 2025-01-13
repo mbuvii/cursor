@@ -1,6 +1,7 @@
 const ytdl = require('ytdl-core');
 const fs = require('fs');
 const path = require('path');
+const config = require('../config/config');
 
 async function downloadYouTube(url, format, msg) {
     const videoInfo = await ytdl.getInfo(url);
@@ -16,6 +17,11 @@ async function downloadYouTube(url, format, msg) {
 
     const tempPath = path.join(__dirname, '..', 'temp', `${videoTitle}.${format === 'audio' ? 'mp3' : 'mp4'}`);
     
+    // Ensure temp directory exists
+    if (!fs.existsSync(path.join(__dirname, '..', 'temp'))) {
+        fs.mkdirSync(path.join(__dirname, '..', 'temp'));
+    }
+
     await new Promise((resolve, reject) => {
         ytdl(url, options)
             .pipe(fs.createWriteStream(tempPath))
